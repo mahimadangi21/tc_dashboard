@@ -46,8 +46,8 @@ export const GridView = () => {
     try {
       const [gridRes, traineesRes, tasksRes] = await Promise.all([
         api.get('/analytics/grid'),
-        api.get('/trainees'),
-        api.get('/tasks')
+        api.get('/trainees/'),
+        api.get('/tasks/')
       ]);
 
       setGridData(gridRes.data);

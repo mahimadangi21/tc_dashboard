@@ -9,6 +9,7 @@ from routes import auth, trainees, tasks, analytics, notifications
 app = FastAPI(
     title="TC Trainee Tracker",
     version="1.0.0",
+    redirect_slashes=False,
 )
 
 app.add_middleware(

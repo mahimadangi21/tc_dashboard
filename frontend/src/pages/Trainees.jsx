@@ -38,8 +38,8 @@ export const Trainees = () => {
       const [swRes, gridRes, tasksRes, rawTraineesRes] = await Promise.all([
         api.get('/analytics/student-wise'),
         api.get('/analytics/grid'),
-        api.get('/tasks'),
-        api.get('/trainees')
+        api.get('/tasks/'),
+        api.get('/trainees/')
       ]);
 
       const swData = swRes.data;

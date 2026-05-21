@@ -50,7 +50,7 @@ export const Technologies = () => {
   useEffect(() => {
     const fetchTrainees = async () => {
       try {
-        const response = await api.get('/trainees');
+        const response = await api.get('/trainees/');
         setTrainees(response.data);
       } catch (err) {
         console.error('Failed to load trainee technology allocations:', err);
