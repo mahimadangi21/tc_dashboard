@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 import uuid
 
@@ -10,9 +10,7 @@ class TaskSummary(BaseModel):
     not_started_count: int
     does_not_apply_count: int
     completion_rate: float
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 class StudentSummary(BaseModel):
     student_name: str
@@ -21,14 +19,11 @@ class StudentSummary(BaseModel):
     not_started: int
     does_not_apply: int
     overall_progress: float
-    # Optional fields for compatibility with active backend response fields:
     student_id: Optional[uuid.UUID] = None
     email: Optional[str] = None
     total_tasks: Optional[int] = None
     completion_rate: Optional[float] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 class DashboardSummary(BaseModel):
     total_students: int
@@ -39,17 +34,13 @@ class DashboardSummary(BaseModel):
     total_not_started: int
     total_does_not_apply: int
     overall_completion_rate: float
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 class PlatformSummary(BaseModel):
     platform: str
     total_tasks: int
     avg_completion_rate: float
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 class GridStudent(BaseModel):
     student_name: str
@@ -58,6 +49,4 @@ class GridStudent(BaseModel):
 class GridResponse(BaseModel):
     tasks: List[str]
     students: List[GridStudent]
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)

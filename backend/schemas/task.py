@@ -1,10 +1,11 @@
 from datetime import datetime, date
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Literal
 from models.task import PlatformType
+from models.trainee_task import TaskStatus
 
-# Status must be Literal['Completed', 'In Progress', 'Not Started', 'Does Not Apply']
+# For input validation
 Status = Literal['Completed', 'In Progress', 'Not Started', 'Does Not Apply']
 
 class TaskBase(BaseModel):
@@ -19,9 +20,7 @@ class TaskCreate(TaskBase):
 class TaskResponse(TaskBase):
     id: int
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 class TraineeTaskBase(BaseModel):
     trainee_id: uuid.UUID
@@ -41,11 +40,9 @@ class TraineeTaskResponse(BaseModel):
     id: int
     trainee_id: uuid.UUID
     task_id: int
-    status: Status
+    status: TaskStatus
     assigned_date: date
     completion_date: Optional[date] = None
     notes: Optional[str] = None
     task: TaskResponse
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
