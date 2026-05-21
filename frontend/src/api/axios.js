@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// In production (HF Spaces), VITE_API_URL is set to /api at build time.
+// In local dev, fall back to http://localhost:8000/api.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,7 +11,7 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT Bearer Token if present
+// Attach JWT token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -18,20 +20,15 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Catch 401 Unauthenticated and redirect to Login
+// Redirect to login on 401
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.clear();
-      // Redirect to login if not already there
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
