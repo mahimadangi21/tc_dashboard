@@ -1,0 +1,55 @@
+from datetime import datetime, date
+import uuid
+from pydantic import BaseModel, EmailStr, computed_field, Field
+from typing import Optional, List
+from models.student import UserRole
+from schemas.task import StudentTaskResponse
+
+class StudentBase(BaseModel):
+    student_name: str
+    email: EmailStr
+    department: str = "Development"
+    joining_date: date = Field(default_factory=date.today)
+
+class StudentCreate(StudentBase):
+    password: str
+
+class StudentUpdate(BaseModel):
+    student_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    department: Optional[str] = None
+    joining_date: Optional[date] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+    role: Optional[UserRole] = None
+
+class StudentResponse(StudentBase):
+    id: uuid.UUID
+    role: UserRole
+    is_active: bool
+    created_at: datetime
+
+    @computed_field
+    @property
+    def overall_progress(self) -> float:
+        # Prevent accessing lazy-loaded attributes in async environment
+        if "student_tasks" in getattr(self, "__dict__", {}):
+            tasks = self.student_tasks
+            if tasks:
+                # Count tasks that do not have 'Does Not Apply'
+                applicable = [t for t in tasks if getattr(t, "status", None) != "Does Not Apply" and getattr(t, "status", None) is not None]
+                if not applicable:
+                    return 0.0
+                completed = [t for t in applicable if getattr(t, "status", None) in ("Completed", "COMPLETED")]
+                return round((len(completed) / len(applicable)) * 100.0, 1)
+        # Return fallback value or 0.0 if not loaded
+        return getattr(self, "_overall_progress", 0.0)
+
+    class Config:
+        from_attributes = True
+
+class StudentFullDetail(StudentResponse):
+    student_tasks: List[StudentTaskResponse] = []
+
+    class Config:
+        from_attributes = True

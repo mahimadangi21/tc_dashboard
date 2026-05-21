@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Environment variables — DO NOT COMMIT
+backend/.env
+frontend/.env
+
+# Firebase service account — DO NOT COMMIT
+backend/firebase-service-account.json
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.cache/
+
+# Alembic
+backend/alembic/__pycache__/
+backend/alembic/versions/__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Screenshots / binary media (not needed for deployment)
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
