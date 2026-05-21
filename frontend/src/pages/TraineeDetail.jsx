@@ -24,12 +24,13 @@ export const TraineeDetail = () => {
   const [editNotes, setEditNotes] = useState('');
   const [savingTaskId, setSavingTaskId] = useState(null);
 
-  // Security gate: Trainee can only view their own detail page
-  const isAuthorized = role === 'admin' || String(loggedInTraineeId) === String(id);
   const canEdit = role === 'admin' || String(loggedInTraineeId) === String(id);
 
   const fetchDetails = async () => {
-    if (!isAuthorized) {
+    // Wait until auth context is hydrated before checking authorization
+    if (!role) return;
+
+    if (role !== 'admin' && String(loggedInTraineeId) !== String(id)) {
       setError("Access Denied. You are not authorized to view other trainees' progress logs.");
       setLoading(false);
       return;
@@ -48,7 +49,7 @@ export const TraineeDetail = () => {
 
   useEffect(() => {
     fetchDetails();
-  }, [id]);
+  }, [id, role, loggedInTraineeId]);
 
   if (loading) {
     return (

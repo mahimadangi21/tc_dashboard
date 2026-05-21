@@ -18,8 +18,8 @@ export const Login = () => {
     if (token) {
       if (role === 'admin') {
         navigate('/dashboard');
-      } else if (role === 'student' && student_id) {
-        navigate(`/students/${student_id}`);
+      } else if ((role === 'trainee' || role === 'student') && student_id) {
+        navigate(`/trainees/${student_id}`);
       }
     }
   }, [token, role, student_id, navigate]);
@@ -34,7 +34,9 @@ export const Login = () => {
       if (result.role === 'admin') {
         navigate('/dashboard');
       } else {
-        navigate(`/students/${result.student_id}`);
+        // Use trainee_id (preferred) with student_id as fallback
+        const id = result.trainee_id || result.student_id;
+        navigate(`/trainees/${id}`);
       }
     } catch (err) {
       console.error(err);
@@ -42,7 +44,7 @@ export const Login = () => {
         setError('Invalid email or password');
       } else {
         setError(
-          err.response?.data?.detail || 
+          err.response?.data?.detail ||
           'An error occurred. Please check your network connection and try again.'
         );
       }
