@@ -1,49 +1,40 @@
-import os
-from pathlib import Path
-
-# Firebase is optional — only initialise if the service account file exists
-_firebase_available = False
-_messaging = None
-
-_cred_path = Path(__file__).resolve().parent.parent / "firebase-service-account.json"
-
-if _cred_path.exists():
-    try:
-        import firebase_admin
-        from firebase_admin import credentials, messaging as fb_messaging
-        cred = credentials.Certificate(str(_cred_path))
-        firebase_admin.initialize_app(cred)
-        _messaging = fb_messaging
-        _firebase_available = True
-    except Exception as e:
-        print(f"Firebase init skipped: {e}")
+"""
+WebSocket-based real-time notification manager.
+"""
+import json
+from typing import Dict, List
+from fastapi import WebSocket
 
 
-def send_push_notification(token: str, title: str, body: str):
-    if not _firebase_available or not _messaging:
-        print("Firebase not configured — push notification skipped.")
-        return None
-    message = _messaging.Message(
-        notification=_messaging.Notification(title=title, body=body),
-        token=token,
-    )
-    try:
-        return _messaging.send(message)
-    except Exception as e:
-        print(f"Error sending push notification: {e}")
-        return None
+class NotificationManager:
+    def __init__(self):
+        self._connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, trainee_id: str, websocket: WebSocket):
+        await websocket.accept()
+        if trainee_id not in self._connections:
+            self._connections[trainee_id] = []
+        self._connections[trainee_id].append(websocket)
+
+    def disconnect(self, trainee_id: str, websocket: WebSocket):
+        if trainee_id in self._connections:
+            try:
+                self._connections[trainee_id].remove(websocket)
+            except ValueError:
+                pass
+            if not self._connections[trainee_id]:
+                del self._connections[trainee_id]
+
+    async def send_to_trainee(self, trainee_id: str, payload: dict):
+        sockets = list(self._connections.get(str(trainee_id), []))
+        dead = []
+        for ws in sockets:
+            try:
+                await ws.send_text(json.dumps(payload))
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(str(trainee_id), ws)
 
 
-def send_topic_notification(topic: str, title: str, body: str):
-    if not _firebase_available or not _messaging:
-        print("Firebase not configured — topic notification skipped.")
-        return None
-    message = _messaging.Message(
-        notification=_messaging.Notification(title=title, body=body),
-        topic=topic,
-    )
-    try:
-        return _messaging.send(message)
-    except Exception as e:
-        print(f"Error sending topic notification: {e}")
-        return None
+notification_manager = NotificationManager()

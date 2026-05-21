@@ -14,6 +14,19 @@ from models.notification import Notification
 from schemas.trainee import TraineeCreate, TraineeUpdate
 from schemas.task import TaskCreate
 from auth.jwt_handler import get_password_hash, verify_password
+from services.notification_service import notification_manager
+
+
+async def _push_notification(trainee_id, title: str, message: str):
+    """Fire-and-forget WebSocket push after a DB notification is saved."""
+    try:
+        await notification_manager.send_to_trainee(str(trainee_id), {
+            "type": "notification",
+            "title": title,
+            "message": message,
+        })
+    except Exception:
+        pass
 
 class TraineeService:
     @staticmethod
