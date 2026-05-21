@@ -41,7 +41,17 @@ export const TraineeDetail = () => {
       setTrainee(res.data);
     } catch (err) {
       console.error('Failed to load trainee profile log details:', err);
-      setError('Failed to fetch trainee details.');
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail;
+      if (status === 401) {
+        setError('Session expired. Please log in again.');
+      } else if (status === 403) {
+        setError('Access denied. You can only view your own profile.');
+      } else if (status === 404) {
+        setError('Trainee profile not found.');
+      } else {
+        setError(`Failed to fetch trainee details. ${detail || `(HTTP ${status || 'network error'})`}`);
+      }
     } finally {
       setLoading(false);
     }

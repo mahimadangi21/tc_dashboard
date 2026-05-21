@@ -1,15 +1,14 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from routes import auth, trainees, tasks, analytics, notifications
 
 app = FastAPI(
     title="TC Trainee Tracker",
     version="1.0.0",
-    description="FastAPI + NeonDB backend with async SQLAlchemy, Alembic, and JWT Authentication."
 )
 
 app.add_middleware(
@@ -34,27 +33,39 @@ async def health():
     return {"status": "ok"}
 
 
-# Serve built React frontend (static files)
+# Serve built React frontend
 STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
 
 if os.path.isdir(STATIC_DIR):
+    # Mount static assets directory
     assets_dir = os.path.join(STATIC_DIR, "assets")
     if os.path.isdir(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-    @app.get("/")
-    async def serve_index():
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    # Mount remaining static files (favicon, icons, etc.)
+    @app.get("/favicon.svg")
+    async def favicon():
+        p = os.path.join(STATIC_DIR, "favicon.svg")
+        return FileResponse(p) if os.path.isfile(p) else JSONResponse({}, status_code=404)
 
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        # Pass through API and system routes
-        if full_path.startswith(("api/", "health", "docs", "openapi", "redoc")):
-            raise HTTPException(status_code=404, detail="Not found")
-        file_path = os.path.join(STATIC_DIR, full_path)
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    # SPA fallback — must be LAST
+    @app.middleware("http")
+    async def spa_fallback(request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        # Only intercept 404s for non-API, non-asset paths
+        if (
+            response.status_code == 404
+            and not path.startswith("/api/")
+            and not path.startswith("/assets/")
+            and not path.startswith("/health")
+            and not path.startswith("/docs")
+            and not path.startswith("/openapi")
+        ):
+            index = os.path.join(STATIC_DIR, "index.html")
+            if os.path.isfile(index):
+                return FileResponse(index)
+        return response
 
 else:
     @app.get("/")

@@ -8,7 +8,7 @@ from database import AsyncSessionLocal
 from models.trainee import Trainee
 from auth.jwt_handler import verify_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
