@@ -55,16 +55,8 @@ class TraineeService:
         db.add(new_trainee)
         await db.flush()  # Generate UUID id for trainee
 
-        # Auto-assign all existing tasks to the new trainee as 'Not Started'
-        tasks_result = await db.execute(select(Task))
-        tasks = tasks_result.scalars().all()
-        for task in tasks:
-            trainee_task = TraineeTask(
-                trainee_id=new_trainee.id,
-                task_id=task.id,
-                status=TaskStatus.NOT_STARTED
-            )
-            db.add(trainee_task)
+        # New trainees start with NO task assignments.
+        # Admin must explicitly assign tasks via the assignment endpoints.
 
         await db.commit()
         return await TraineeService.get_trainee_by_id(db, new_trainee.id)
@@ -335,14 +327,14 @@ class TraineeService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def create_task(db: AsyncSession, task_in: TaskCreate) -> Task:
+    async def create_task(db: AsyncSession, task_in: "TaskCreate") -> Task:
         result = await db.execute(select(Task).where(Task.task_name == task_in.task_name))
         if result.scalars().first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="A task with this name already exists."
             )
-        
+
         new_task = Task(
             task_name=task_in.task_name,
             platform=task_in.platform,
@@ -351,34 +343,125 @@ class TraineeService:
         )
         db.add(new_task)
         await db.flush()  # Obtain new_task.id
-        
-        # Auto-create trainee_task rows for ALL existing trainees with status 'Not Started'
-        trainees_result = await db.execute(select(Trainee))
-        trainees = trainees_result.scalars().all()
-        for trainee in trainees:
-            trainee_task = TraineeTask(
+
+        # Determine which trainees to assign
+        if task_in.assign_to_all:
+            trainees_result = await db.execute(
+                select(Trainee).where(and_(Trainee.role == UserRole.TRAINEE, Trainee.is_active == True))
+            )
+            trainees_to_assign = trainees_result.scalars().all()
+        elif task_in.assign_to:
+            trainees_result = await db.execute(
+                select(Trainee).where(Trainee.id.in_(task_in.assign_to))
+            )
+            trainees_to_assign = trainees_result.scalars().all()
+        else:
+            trainees_to_assign = []  # No assignments — admin assigns later
+
+        for trainee in trainees_to_assign:
+            db.add(TraineeTask(
                 trainee_id=trainee.id,
                 task_id=new_task.id,
                 status=TaskStatus.NOT_STARTED
-            )
-            db.add(trainee_task)
-            
-            # Create a notification for the trainee
-            notification = Notification(
+            ))
+            db.add(Notification(
                 trainee_id=trainee.id,
                 title="New Task Assigned!",
                 message=f"A new task '{new_task.task_name}' has been assigned to you."
-            )
-            db.add(notification)
+            ))
             await _push_notification(
                 trainee.id,
                 title="New Task Assigned!",
                 message=f"A new task '{new_task.task_name}' has been assigned to you."
             )
-            
+
         await db.commit()
         await db.refresh(new_task)
         return new_task
+
+    @staticmethod
+    async def get_task_assignments(db: AsyncSession, task_id: int) -> List[Dict[str, Any]]:
+        """Return all trainees currently assigned to a task."""
+        result = await db.execute(
+            select(Trainee.id, Trainee.trainee_name, TraineeTask.status, TraineeTask.assigned_date)
+            .join(TraineeTask, Trainee.id == TraineeTask.trainee_id)
+            .where(TraineeTask.task_id == task_id)
+            .order_by(Trainee.trainee_name)
+        )
+        return [
+            {
+                "trainee_id": str(row.id),
+                "trainee_name": row.trainee_name,
+                "status": row.status.value if hasattr(row.status, "value") else row.status,
+                "assigned_date": row.assigned_date,
+            }
+            for row in result.all()
+        ]
+
+    @staticmethod
+    async def assign_task_to_trainees(
+        db: AsyncSession, task_id: int, trainee_ids: List[uuid.UUID]
+    ) -> Dict[str, Any]:
+        """Assign a task to a list of trainees. Skips already-assigned ones."""
+        # Verify task exists
+        task_res = await db.execute(select(Task).where(Task.id == task_id))
+        task = task_res.scalars().first()
+        if not task:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
+
+        # Find already-assigned trainee IDs to skip duplicates
+        existing_res = await db.execute(
+            select(TraineeTask.trainee_id).where(TraineeTask.task_id == task_id)
+        )
+        already_assigned = {row[0] for row in existing_res.all()}
+
+        assigned_count = 0
+        skipped_count = 0
+        for tid in trainee_ids:
+            if tid in already_assigned:
+                skipped_count += 1
+                continue
+            trainee_res = await db.execute(select(Trainee).where(Trainee.id == tid))
+            trainee = trainee_res.scalars().first()
+            if not trainee:
+                continue
+            db.add(TraineeTask(
+                trainee_id=tid,
+                task_id=task_id,
+                status=TaskStatus.NOT_STARTED
+            ))
+            db.add(Notification(
+                trainee_id=tid,
+                title="New Task Assigned!",
+                message=f"Task '{task.task_name}' has been assigned to you."
+            ))
+            await _push_notification(
+                tid,
+                title="New Task Assigned!",
+                message=f"Task '{task.task_name}' has been assigned to you."
+            )
+            assigned_count += 1
+
+        await db.commit()
+        return {
+            "assigned": assigned_count,
+            "skipped_already_assigned": skipped_count,
+            "message": f"Assigned to {assigned_count} trainee(s). {skipped_count} already had this task."
+        }
+
+    @staticmethod
+    async def unassign_task_from_trainees(
+        db: AsyncSession, task_id: int, trainee_ids: List[uuid.UUID]
+    ) -> Dict[str, Any]:
+        """Remove task assignments (and all progress) for the given trainees."""
+        from sqlalchemy import delete as sql_delete
+        result = await db.execute(
+            sql_delete(TraineeTask)
+            .where(and_(TraineeTask.task_id == task_id, TraineeTask.trainee_id.in_(trainee_ids)))
+        )
+        await db.commit()
+        removed = result.rowcount
+        return {"removed": removed, "message": f"Removed {removed} assignment(s). All progress for those trainees is deleted."}
 
     @staticmethod
     async def get_notifications(db: AsyncSession, trainee_id: uuid.UUID) -> List[Notification]:
@@ -601,7 +684,7 @@ class TraineeService:
             st_map = {st.task_id: st.status.value if hasattr(st.status, "value") else st.status for st in trainee.trainee_tasks}
             statuses = []
             for task in tasks:
-                statuses.append(st_map.get(task.id, "Not Started"))
+                statuses.append(st_map.get(task.id, None))
                 
             grid_students.append({
                 "student_name": trainee.trainee_name,  # Legacy field mapping

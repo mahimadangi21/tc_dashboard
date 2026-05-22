@@ -44,7 +44,7 @@ class PlatformSummary(BaseModel):
 
 class GridStudent(BaseModel):
     student_name: str
-    statuses: List[str]
+    statuses: List[Optional[str]]
 
 class GridResponse(BaseModel):
     tasks: List[str]

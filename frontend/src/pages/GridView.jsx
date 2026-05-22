@@ -3,7 +3,7 @@ import api from '../api/axios';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import AuthContext from '../context/AuthContext';
-import { FileSpreadsheet, Download, RefreshCw, X, Save, AlertCircle, Plus } from 'lucide-react';
+import { FileSpreadsheet, Download, RefreshCw, X, Save, AlertCircle, Plus, Users, UserPlus, Search } from 'lucide-react';
 
 export const GridView = () => {
   const { theme } = useContext(AuthContext);
@@ -35,6 +35,10 @@ export const GridView = () => {
   const [description, setDescription] = useState('');
   const [creatingTask, setCreatingTask] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState(null);
+  // Assignment mode for Add Task: 'all' | 'select' | 'none'
+  const [assignMode, setAssignMode] = useState('all');
+  const [selectedTrainees, setSelectedTrainees] = useState([]);
+  const [traineeSearch, setTraineeSearch] = useState('');
 
   // Mappings
   const [traineeNameToId, setTraineeNameToId] = useState({});
@@ -57,15 +61,20 @@ export const GridView = () => {
 
       const sMap = {};
       traineesRes.data.forEach(s => {
-        sMap[s.trainee_name] = s.id;
+        if (s.trainee_name) {
+          sMap[s.trainee_name.trim().toLowerCase()] = s.id;
+        }
       });
       setTraineeNameToId(sMap);
 
       const tMap = {};
       const pMap = {};
       tasksRes.data.forEach(t => {
-        tMap[t.task_name] = t.id;
-        pMap[t.task_name] = t.platform;
+        if (t.task_name) {
+          const key = t.task_name.trim().toLowerCase();
+          tMap[key] = t.id;
+          pMap[key] = t.platform;
+        }
       });
       setTaskNameToId(tMap);
       setTaskNameToPlatform(pMap);
@@ -122,22 +131,16 @@ export const GridView = () => {
     let finalPlatform = platform;
     if (platform === 'Other') {
       const trimmedNew = newPlatform.trim();
-      if (!trimmedNew) {
-        alert('New platform name is required.');
-        return;
-      }
-      if (trimmedNew.length < 2) {
-        alert('Platform name must be at least 2 characters.');
-        return;
-      }
-      const isDuplicate = uniquePlatforms.some(
-        (p) => p.toLowerCase() === trimmedNew.toLowerCase()
-      );
-      if (isDuplicate) {
-        alert('Platform name already exists.');
-        return;
-      }
+      if (!trimmedNew) { alert('New platform name is required.'); return; }
+      if (trimmedNew.length < 2) { alert('Platform name must be at least 2 characters.'); return; }
+      const isDuplicate = uniquePlatforms.some(p => p.toLowerCase() === trimmedNew.toLowerCase());
+      if (isDuplicate) { alert('Platform name already exists.'); return; }
       finalPlatform = trimmedNew;
+    }
+
+    if (assignMode === 'select' && selectedTrainees.length === 0) {
+      alert('Please select at least one trainee or choose All Users / None.');
+      return;
     }
 
     setCreatingTask(true);
@@ -146,13 +149,18 @@ export const GridView = () => {
         task_name: taskName.trim(),
         platform: finalPlatform,
         category: category.trim(),
-        description: description.trim() || undefined
+        description: description.trim() || undefined,
+        assign_to_all: assignMode === 'all',
+        assign_to: assignMode === 'select' ? selectedTrainees : null,
       });
       setTaskName('');
       setPlatform('Codechef');
       setNewPlatform('');
       setCategory('');
       setDescription('');
+      setAssignMode('all');
+      setSelectedTrainees([]);
+      setTraineeSearch('');
       setTaskModalOpen(false);
       await fetchData();
     } catch (err) {
@@ -171,8 +179,20 @@ export const GridView = () => {
     );
   }
 
+  const getTaskPlatform = (tName) => {
+    if (!tName) return 'Other';
+    const key = tName.trim().toLowerCase();
+    return taskNameToPlatform[key] || 'Other';
+  };
+
+  const getTaskId = (tName) => {
+    if (!tName) return undefined;
+    const key = tName.trim().toLowerCase();
+    return taskNameToId[key];
+  };
+
   const filteredTasks = gridData?.tasks.filter(tName => {
-    const tPlatform = taskNameToPlatform[tName] || 'Other';
+    const tPlatform = normalizePlatform(getTaskPlatform(tName));
     return activePlatform === 'All' || tPlatform === activePlatform;
   }) || [];
 
@@ -183,7 +203,7 @@ export const GridView = () => {
     });
 
     filteredTasks.forEach(tName => {
-      const tPlatform = taskNameToPlatform[tName] || 'Internal';
+      const tPlatform = normalizePlatform(getTaskPlatform(tName));
       if (!groups[tPlatform]) {
         groups[tPlatform] = [];
       }
@@ -201,7 +221,7 @@ export const GridView = () => {
     const headers = ['Task Name', 'Platform', ...gridData.students.map(s => s.student_name)];
 
     const rows = filteredTasks.map(tName => {
-      const tPlatform = taskNameToPlatform[tName] || '';
+      const tPlatform = normalizePlatform(getTaskPlatform(tName));
       const taskIdx = gridData.tasks.indexOf(tName);
       const statuses = gridData.students.map(s => s.statuses[taskIdx] || '—');
       return [tName, tPlatform, ...statuses];
@@ -223,8 +243,9 @@ export const GridView = () => {
   };
 
   const handleCellClick = (student, tName, currentStatus) => {
-    const traineeId = traineeNameToId[student.student_name];
-    const taskId = taskNameToId[tName];
+    const traineeKey = student.student_name ? student.student_name.trim().toLowerCase() : '';
+    const traineeId = traineeNameToId[traineeKey];
+    const taskId = getTaskId(tName);
 
     setSelectedCell({
       traineeName: student.student_name,
@@ -258,6 +279,10 @@ export const GridView = () => {
   };
 
   const handleDeleteTask = async (taskId) => {
+    if (!taskId) {
+      alert('Error: Task ID not found.');
+      return;
+    }
     if (!confirm('Are you sure you want to delete this task? This will also remove it from all trainees.')) return;
     setDeletingTaskId(taskId);
     try {
@@ -363,7 +388,7 @@ export const GridView = () => {
 
             return tasksInGroup.map((tName, tIdx) => {
               const originalTaskIdx = gridData.tasks.indexOf(tName);
-              const taskObj = tasks.find(t => t.task_name === tName) || {};
+              const taskObj = tasks.find(t => t.task_name && t.task_name.trim().toLowerCase() === tName.trim().toLowerCase()) || {};
 
               return (
                 <div
@@ -419,8 +444,33 @@ export const GridView = () => {
                   <div className={`pt-4 border-t space-y-2.5 ${isDark ? 'border-gray-800' : 'border-gray-150'}`}>
                     <span className="block text-[9px] font-black uppercase tracking-wider text-indigo-500 mb-2">Trainee Progress</span>
                     {gridData.students.map((student, sIdx) => {
-                      const cellStatus = student.statuses[originalTaskIdx] || '—';
+                      const rawStatus = student.statuses[originalTaskIdx];
+                      // Unassigned = no entry at all (null/undefined)
+                      const isUnassigned = rawStatus === null || rawStatus === undefined;
+                      const cellStatus = rawStatus || '—';
                       const initials = student.student_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+                      if (isUnassigned) {
+                        return (
+                          <div
+                            key={sIdx}
+                            className={`flex items-center justify-between p-2 rounded-xl border text-[10px] ${
+                              isDark
+                                ? 'bg-gray-950/20 border-gray-850/30 text-gray-700'
+                                : 'bg-gray-50/40 border-gray-100 text-gray-300'
+                            }`}
+                            title="Not assigned to this task"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="h-6 w-6 rounded-md bg-gray-800/20 border border-gray-700/20 flex items-center justify-center font-extrabold text-[8px] text-gray-600 shrink-0">
+                                {initials}
+                              </div>
+                              <span className="font-semibold truncate">{student.student_name}</span>
+                            </div>
+                            <span className="text-[9px] font-bold tracking-wider opacity-50">—</span>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div
@@ -555,10 +605,10 @@ export const GridView = () => {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="mb-6">
+            <div className="mb-5">
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Curriculum Builder</h4>
               <h3 className="text-lg font-black mt-1 leading-snug">Add Task Course</h3>
-              <p className="text-xs text-indigo-500 font-semibold mt-0.5">Create a new coding challenge for all trainees</p>
+              <p className="text-xs text-indigo-500 font-semibold mt-0.5">Assign to specific or all trainees</p>
             </div>
 
             <form onSubmit={handleAddTask} className="space-y-4">
@@ -636,6 +686,81 @@ export const GridView = () => {
                   />
                 </div>
               )}
+
+              {/* Assignment Mode */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-indigo-500 mb-2">Assign To *</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { value: 'all',    label: 'All Users' },
+                    { value: 'select', label: 'Select' },
+                    { value: 'none',   label: 'None Yet' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => { setAssignMode(opt.value); setSelectedTrainees([]); setTraineeSearch(''); }}
+                      className={`py-2 rounded-xl border text-[10px] font-black uppercase tracking-wide transition-all ${
+                        assignMode === opt.value
+                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400'
+                          : isDark
+                            ? 'border-gray-800 text-gray-500 hover:border-gray-700'
+                            : 'border-gray-200 text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {assignMode === 'select' && (
+                  <div className={`mt-3 rounded-xl border overflow-hidden ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <div className={`flex items-center gap-2 p-2 border-b ${isDark ? 'border-gray-800 bg-gray-950' : 'border-gray-200 bg-gray-50'}`}>
+                      <Search className="h-3.5 w-3.5 text-gray-500 shrink-0" />
+                      <input
+                        type="text"
+                        placeholder="Search trainees..."
+                        value={traineeSearch}
+                        onChange={e => setTraineeSearch(e.target.value)}
+                        className={`flex-1 text-xs bg-transparent outline-none ${isDark ? 'text-white placeholder-gray-600' : 'text-gray-900 placeholder-gray-400'}`}
+                      />
+                    </div>
+                    <div className="max-h-36 overflow-y-auto">
+                      {trainees
+                        .filter(t => t.trainee_name.toLowerCase().includes(traineeSearch.toLowerCase()))
+                        .map(t => {
+                          const checked = selectedTrainees.includes(t.id);
+                          return (
+                            <label key={t.id} className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-xs transition-colors ${
+                              checked
+                                ? isDark ? 'bg-indigo-500/10 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
+                                : isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => setSelectedTrainees(prev =>
+                                  checked ? prev.filter(s => s !== t.id) : [...prev, t.id]
+                                )}
+                                className="accent-indigo-500 h-3.5 w-3.5"
+                              />
+                              <span className="font-semibold">{t.trainee_name}</span>
+                            </label>
+                          );
+                        })}
+                    </div>
+                    <div className={`px-3 py-1.5 text-[10px] font-bold border-t ${isDark ? 'border-gray-800 text-gray-500' : 'border-gray-100 text-gray-400'}`}>
+                      {selectedTrainees.length} selected
+                    </div>
+                  </div>
+                )}
+
+                {assignMode === 'none' && (
+                  <p className={`mt-2 text-[10px] ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+                    No trainees will be assigned. Use "Manage Assignments" later.
+                  </p>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-indigo-500 mb-2">
