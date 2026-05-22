@@ -17,6 +17,9 @@ if "?" in DATABASE_URL:
 else:
     clean_url = DATABASE_URL
 
+# Disable SQLAlchemy asyncpg dialect prepared statement caching for PgBouncer compatibility
+clean_url = f"{clean_url}?prepared_statement_cache_size=0"
+
 # Create the async engine with NeonDB optimized connection pooling and SSL connection arguments
 engine = create_async_engine(
     clean_url,

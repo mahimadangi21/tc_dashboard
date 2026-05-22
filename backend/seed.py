@@ -206,6 +206,9 @@ async def seed_db():
     else:
         clean_url = url
 
+    # Disable SQLAlchemy asyncpg dialect prepared statement caching for PgBouncer compatibility
+    clean_url = f"{clean_url}?prepared_statement_cache_size=0"
+
     engine = create_async_engine(clean_url, connect_args={"ssl": True, "statement_cache_size": 0})
     AsyncSessionMaker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
