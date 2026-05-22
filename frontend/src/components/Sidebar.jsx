@@ -22,7 +22,7 @@ export const Sidebar = () => {
   };
 
   useEffect(() => {
-    if (role === 'trainee') {
+    if (role) {
       fetchNotifications();
       const interval = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
       return () => clearInterval(interval);
@@ -114,7 +114,7 @@ export const Sidebar = () => {
             );
           })}
 
-          {role === 'trainee' && (
+          {(role === 'trainee' || role === 'admin') && (
             <button
               onClick={() => setIsOpen(!isOpen)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
@@ -174,7 +174,7 @@ export const Sidebar = () => {
       </aside>
 
       {/* Slide-out Drawer */}
-      {role === 'trainee' && (
+      {(role === 'trainee' || role === 'admin') && (
         <div
           className={`fixed top-0 h-screen w-80 shadow-2xl z-20 transition-all duration-300 flex flex-col border-r ${
             isOpen ? 'left-[240px] opacity-100 visible' : 'left-[100px] opacity-0 invisible pointer-events-none'

@@ -116,6 +116,11 @@ class TraineeService:
                 message="Your profile details have been updated by the administrator."
             )
             db.add(notification)
+            await _push_notification(
+                trainee_id,
+                title="Profile Updated",
+                message="Your profile details have been updated by the administrator."
+            )
             
         await db.commit()
         return await TraineeService.get_trainee_by_id(db, trainee_id)
@@ -222,6 +227,35 @@ class TraineeService:
                 message=f"The administrator has updated the status of your task '{task_name}' to '{status_val}'."
             )
             db.add(notification)
+            await _push_notification(
+                trainee_id,
+                title="Task Assignment Updated",
+                message=f"The administrator has updated the status of your task '{task_name}' to '{status_val}'."
+            )
+        else:
+            # Trainee updated their own task progress. Notify all active administrators.
+            trainee_res = await db.execute(select(Trainee).where(Trainee.id == trainee_id))
+            trainee_obj = trainee_res.scalars().first()
+            trainee_name = trainee_obj.trainee_name if trainee_obj else "A trainee"
+            task_name = trainee_task.task.task_name if trainee_task.task else f"Task ID {task_id}"
+            
+            note_suffix = f" Note: {notes_val}" if notes_val else ""
+            msg = f"Trainee '{trainee_name}' has updated the status of task '{task_name}' to '{status_val}'.{note_suffix}"
+            
+            admins_res = await db.execute(
+                select(Trainee).where(
+                    and_(Trainee.role == UserRole.ADMIN, Trainee.is_active == True)
+                )
+            )
+            admins = admins_res.scalars().all()
+            for admin in admins:
+                notification = Notification(
+                    trainee_id=admin.id,
+                    title="Task Progress Updated",
+                    message=msg
+                )
+                db.add(notification)
+                await _push_notification(admin.id, title="Task Progress Updated", message=msg)
 
         await db.commit()
         await db.refresh(trainee_task)
@@ -249,6 +283,11 @@ class TraineeService:
             message=f"The task '{task_name}' has been unassigned from your profile by the administrator."
         )
         db.add(notification)
+        await _push_notification(
+            trainee_id,
+            title="Task Assignment Removed",
+            message=f"The task '{task_name}' has been unassigned from your profile by the administrator."
+        )
         
         await db.delete(trainee_task)
         await db.commit()
@@ -331,6 +370,11 @@ class TraineeService:
                 message=f"A new task '{new_task.task_name}' has been assigned to you."
             )
             db.add(notification)
+            await _push_notification(
+                trainee.id,
+                title="New Task Assigned!",
+                message=f"A new task '{new_task.task_name}' has been assigned to you."
+            )
             
         await db.commit()
         await db.refresh(new_task)
