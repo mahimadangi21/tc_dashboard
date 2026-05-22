@@ -33,7 +33,7 @@ async def update_me(
 @router.get("/", response_model=List[TraineeResponse])
 async def list_trainees(
     search: Optional[str] = None,
-    status: Optional[str] = None,
+    status: Optional[str] = "active",
     current_user: Trainee = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):

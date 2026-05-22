@@ -260,6 +260,7 @@ class TraineeService:
         result = await db.execute(
             select(Trainee)
             .options(joinedload(Trainee.trainee_tasks))
+            .where(Trainee.is_active == True)
             .order_by(Trainee.trainee_name)
         )
         return list(result.scalars().unique().all())
@@ -402,7 +403,7 @@ class TraineeService:
 
     @staticmethod
     async def get_dashboard_summary(db: AsyncSession) -> Dict[str, Any]:
-        trainees_res = await db.execute(select(Trainee).where(Trainee.role == UserRole.TRAINEE))
+        trainees_res = await db.execute(select(Trainee).where(and_(Trainee.role == UserRole.TRAINEE, Trainee.is_active == True)))
         trainees = trainees_res.scalars().all()
         total_trainees = len(trainees)
         
@@ -454,7 +455,7 @@ class TraineeService:
         result = await db.execute(
             select(Trainee)
             .options(joinedload(Trainee.trainee_tasks))
-            .where(Trainee.role == UserRole.TRAINEE)
+            .where(and_(Trainee.role == UserRole.TRAINEE, Trainee.is_active == True))
         )
         trainees = result.scalars().unique().all()
         
@@ -546,7 +547,7 @@ class TraineeService:
         trainees_res = await db.execute(
             select(Trainee)
             .options(joinedload(Trainee.trainee_tasks))
-            .where(Trainee.role == UserRole.TRAINEE)
+            .where(and_(Trainee.role == UserRole.TRAINEE, Trainee.is_active == True))
             .order_by(Trainee.trainee_name)
         )
         trainees = trainees_res.scalars().unique().all()
