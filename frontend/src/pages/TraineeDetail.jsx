@@ -113,41 +113,35 @@ export const TraineeDetail = () => {
   }
 
   // Calculate platform aggregates from tasks array
-  const platformAggs = {
-    Codechef: { completed: 0, total: 0 },
-    HackerRank: { completed: 0, total: 0 },
-    Akamai: { completed: 0, total: 0 }
-  };
+  const platformAggs = {};
+  const groupedTasks = {};
 
   trainee.trainee_tasks?.forEach((st) => {
-    const platform = st.task?.platform || 'Akamai';
-    if (platformAggs[platform] !== undefined) {
-      platformAggs[platform].total += 1;
-      if (st.status === 'Completed') {
-        platformAggs[platform].completed += 1;
-      }
+    const rawPlatform = st.task?.platform || 'Akamai';
+    let displayName = rawPlatform;
+    const lower = rawPlatform.toLowerCase();
+    if (lower === 'codechef') displayName = 'Codechef';
+    else if (lower === 'hackerrank') displayName = 'HackerRank';
+    else if (lower === 'akamai') displayName = 'Akamai';
+    else displayName = rawPlatform.charAt(0).toUpperCase() + rawPlatform.slice(1);
+
+    if (!platformAggs[displayName]) {
+      platformAggs[displayName] = { completed: 0, total: 0 };
     }
+    platformAggs[displayName].total += 1;
+    if (st.status === 'Completed') {
+      platformAggs[displayName].completed += 1;
+    }
+
+    if (!groupedTasks[displayName]) {
+      groupedTasks[displayName] = [];
+    }
+    groupedTasks[displayName].push(st);
   });
 
   const totalCompleted = trainee.trainee_tasks?.filter(st => st.status === 'Completed').length || 0;
   const totalTasks = trainee.trainee_tasks?.length || 0;
   const progress = trainee.overall_progress ?? 0;
-
-  // Group tasks by platform
-  const groupedTasks = {
-    Codechef: [],
-    HackerRank: [],
-    Akamai: []
-  };
-
-  trainee.trainee_tasks?.forEach((st) => {
-    const platform = st.task?.platform || 'Akamai';
-    if (groupedTasks[platform]) {
-      groupedTasks[platform].push(st);
-    } else {
-      groupedTasks['Akamai'].push(st);
-    }
-  });
 
   const getInitials = (name) => {
     if (!name) return 'T';
@@ -318,7 +312,7 @@ export const TraineeDetail = () => {
               </div>
 
               <div className={`divide-y ${isDark ? 'divide-gray-850/60' : 'divide-gray-150'}`}>
-                {['Codechef', 'HackerRank', 'Akamai'].map(platform => {
+                {Object.keys(groupedTasks).map(platform => {
                   const tasksInPlatform = groupedTasks[platform] || [];
                   if (tasksInPlatform.length === 0) return null;
 
@@ -333,7 +327,7 @@ export const TraineeDetail = () => {
 
                       {tasksInPlatform.map((st) => {
                         const isEditingThis = editingTaskId === st.task_id;
-                        const isAkamai = platform === 'Akamai';
+                        const isAkamai = platform.toLowerCase() === 'akamai';
                         const PlatformIcon = isAkamai ? Globe : Cpu;
 
                         return (
@@ -464,44 +458,26 @@ export const TraineeDetail = () => {
               </h4>
 
               <div className="space-y-5">
-                {/* Codechef */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-gray-450">
-                    <span>Codechef Challenges</span>
-                    <span className={isDark ? 'text-white' : 'text-gray-905'}>{platformAggs.Codechef.completed}/3 completed</span>
-                  </div>
-                  <ProgressBar
-                    progress={(platformAggs.Codechef.completed / 3) * 100}
-                    label=""
-                    color="bg-blue-500"
-                  />
-                </div>
-
-                {/* HackerRank */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-gray-450">
-                    <span>HackerRank Challenges</span>
-                    <span className={isDark ? 'text-white' : 'text-gray-905'}>{platformAggs.HackerRank.completed}/9 completed</span>
-                  </div>
-                  <ProgressBar
-                    progress={(platformAggs.HackerRank.completed / 9) * 100}
-                    label=""
-                    color="bg-green-500"
-                  />
-                </div>
-
-                {/* Akamai */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-gray-450">
-                    <span>Akamai Challenges</span>
-                    <span className={isDark ? 'text-white' : 'text-gray-905'}>{platformAggs.Akamai.completed}/1 completed</span>
-                  </div>
-                  <ProgressBar
-                    progress={(platformAggs.Akamai.completed / 1) * 100}
-                    label=""
-                    color="bg-purple-500"
-                  />
-                </div>
+                {Object.entries(platformAggs).map(([platformName, agg], idx) => {
+                  const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-teal-500'];
+                  const color = colors[idx % colors.length];
+                  const pct = agg.total > 0 ? (agg.completed / agg.total) * 100 : 0;
+                  return (
+                    <div key={platformName} className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-bold text-gray-450">
+                        <span>{platformName} Challenges</span>
+                        <span className={isDark ? 'text-white' : 'text-gray-905'}>
+                          {agg.completed}/{agg.total} completed
+                        </span>
+                      </div>
+                      <ProgressBar
+                        progress={pct}
+                        label=""
+                        color={color}
+                      />
+                    </div>
+                  );
+                })}
 
                 <div className="border-t border-gray-150 dark:border-gray-850 pt-5">
                   {/* Overall */}

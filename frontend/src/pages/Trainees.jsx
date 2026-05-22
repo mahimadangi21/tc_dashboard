@@ -60,23 +60,40 @@ export const Trainees = () => {
         const gridEntry = gridData.students.find(s => s.student_name === sw.student_name);
         const rawT = traineeDataMap[sw.student_name] || {};
         
-        const platformProgress = {
-          Codechef: { completed: 0, total: 3 },
-          HackerRank: { completed: 0, total: 9 },
-          Akamai: { completed: 0, total: 1 }
-        };
+        // Build dynamic platform totals from all tasks
+        const platformProgress = {};
+        gridData.tasks.forEach((taskName) => {
+          const rawPlatform = taskPlatformMap[taskName] || 'Akamai';
+          let displayName = rawPlatform;
+          const lower = rawPlatform.toLowerCase();
+          if (lower === 'codechef') displayName = 'Codechef';
+          else if (lower === 'hackerrank') displayName = 'HackerRank';
+          else if (lower === 'akamai') displayName = 'Akamai';
+          else displayName = rawPlatform.charAt(0).toUpperCase() + rawPlatform.slice(1);
+
+          if (!platformProgress[displayName]) {
+            platformProgress[displayName] = { completed: 0, total: 0 };
+          }
+          platformProgress[displayName].total += 1;
+        });
 
         if (gridEntry) {
           gridEntry.statuses.forEach((status, idx) => {
             const taskName = gridData.tasks[idx];
-            const platform = taskPlatformMap[taskName] || 'Akamai';
-            if (status === 'Completed') {
-              if (platformProgress[platform]) {
-                platformProgress[platform].completed += 1;
-              }
+            const rawPlatform = taskPlatformMap[taskName] || 'Akamai';
+            let displayName = rawPlatform;
+            const lower = rawPlatform.toLowerCase();
+            if (lower === 'codechef') displayName = 'Codechef';
+            else if (lower === 'hackerrank') displayName = 'HackerRank';
+            else if (lower === 'akamai') displayName = 'Akamai';
+            else displayName = rawPlatform.charAt(0).toUpperCase() + rawPlatform.slice(1);
+
+            if (status === 'Completed' && platformProgress[displayName]) {
+              platformProgress[displayName].completed += 1;
             }
           });
         }
+
 
         return {
           ...sw,

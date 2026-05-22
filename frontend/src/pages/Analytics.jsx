@@ -51,11 +51,20 @@ export const Analytics = () => {
     );
   }
 
-  const pieData = platformWise.map((p) => {
-    let color = '#d946ef'; // Fuchsia 500 (Akamai)
-    if (p.platform.toLowerCase().includes('codechef')) color = '#6366f1'; // Indigo 500
-    else if (p.platform.toLowerCase().includes('hackerrank')) color = '#14b8a6'; // Teal 500
+  const getPlatformColor = (platformStr) => {
+    const lower = (platformStr || '').toLowerCase();
+    if (lower.includes('codechef')) return '#6366f1';
+    if (lower.includes('hackerrank')) return '#14b8a6';
+    if (lower.includes('akamai')) return '#d946ef';
+    if (lower.includes('internal')) return '#f59e0b';
+    const colors = ['#8b5cf6', '#ec4899', '#22d3ee', '#10b981', '#f97316'];
+    let hash = 0;
+    for (let i = 0; i < lower.length; i++) hash = lower.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
 
+  const pieData = platformWise.map((p) => {
+    const color = getPlatformColor(p.platform);
     return {
       name: p.platform,
       value: p.total_tasks,
@@ -355,10 +364,7 @@ export const Analytics = () => {
                   />
                   <Bar dataKey="completion_rate" name="Completion Rate">
                     {taskWise.map((entry, index) => {
-                      let color = '#d946ef'; // Fuchsia 500
-                      const platformLower = (entry.platform || '').toLowerCase();
-                      if (platformLower.includes('codechef')) color = '#6366f1'; // Indigo 500
-                      else if (platformLower.includes('hackerrank')) color = '#14b8a6'; // Teal 500
+                      const color = getPlatformColor(entry.platform);
                       return <Cell key={`cell-${index}`} fill={color} />;
                     })}
                     <LabelList

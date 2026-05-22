@@ -70,6 +70,19 @@ export const Dashboard = () => {
     );
   }
 
+  const getPlatformColor = (platformStr) => {
+    const lower = (platformStr || '').toLowerCase();
+    if (lower.includes('codechef')) return '#6366f1';
+    if (lower.includes('hackerrank')) return '#14b8a6';
+    if (lower.includes('akamai')) return '#d946ef';
+    if (lower.includes('internal')) return '#f59e0b';
+    // Derive a stable color from the platform name string
+    const colors = ['#8b5cf6', '#ec4899', '#22d3ee', '#10b981', '#f97316'];
+    let hash = 0;
+    for (let i = 0; i < lower.length; i++) hash = lower.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const shortenTaskName = (name) => {
     if (!name) return '';
     return name
@@ -240,10 +253,7 @@ export const Dashboard = () => {
                     }} />
                     <Bar dataKey="completion_rate" name="Completion Rate">
                       {taskWise.map((entry, index) => {
-                        let color = '#d946ef'; // Fuchsia
-                        const platformLower = (entry.platform || '').toLowerCase();
-                        if (platformLower.includes('codechef')) color = '#6366f1';
-                        else if (platformLower.includes('hackerrank')) color = '#14b8a6';
+                        const color = getPlatformColor(entry.platform);
                         return <Cell key={`cell-${index}`} fill={color} />;
                       })}
                       <LabelList
@@ -260,11 +270,14 @@ export const Dashboard = () => {
                 </ResponsiveContainer>
               )}
             </div>
-            {/* Custom Legend */}
-            <div className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-wider text-gray-500 shrink-0 mt-2">
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#6366f1]"></span>Codechef</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#14b8a6]"></span>HackerRank</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#d946ef]"></span>Akamai</span>
+            {/* Dynamic Platform Legend */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] font-black uppercase tracking-wider text-gray-500 shrink-0 mt-2">
+              {[...new Set(taskWise.map(t => t.platform))].map(platform => (
+                <span key={platform} className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getPlatformColor(platform) }}></span>
+                  {platform}
+                </span>
+              ))}
             </div>
           </div>
         </div>

@@ -78,19 +78,23 @@ export const MyProgress = () => {
     );
   }
 
-  const platformAggs = {
-    Codechef: { completed: 0, total: 0 },
-    HackerRank: { completed: 0, total: 0 },
-    Akamai: { completed: 0, total: 0 }
-  };
+  const platformAggs = {};
 
   trainee.trainee_tasks?.forEach((st) => {
-    const platform = st.task?.platform || 'Akamai';
-    if (platformAggs[platform] !== undefined) {
-      platformAggs[platform].total += 1;
-      if (st.status === 'Completed') {
-        platformAggs[platform].completed += 1;
-      }
+    const rawPlatform = st.task?.platform || 'Akamai';
+    let displayName = rawPlatform;
+    const lower = rawPlatform.toLowerCase();
+    if (lower === 'codechef') displayName = 'Codechef';
+    else if (lower === 'hackerrank') displayName = 'HackerRank';
+    else if (lower === 'akamai') displayName = 'Akamai';
+    else displayName = rawPlatform.charAt(0).toUpperCase() + rawPlatform.slice(1);
+
+    if (!platformAggs[displayName]) {
+      platformAggs[displayName] = { completed: 0, total: 0 };
+    }
+    platformAggs[displayName].total += 1;
+    if (st.status === 'Completed') {
+      platformAggs[displayName].completed += 1;
     }
   });
 
@@ -181,41 +185,26 @@ export const MyProgress = () => {
           </h4>
 
           <div className="space-y-5">
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-bold text-gray-450">
-                <span>Codechef Challenges</span>
-                <span className={isDark ? 'text-white' : 'text-gray-905'}>{platformAggs.Codechef.completed}/3 completed</span>
-              </div>
-              <ProgressBar
-                progress={(platformAggs.Codechef.completed / 3) * 100}
-                label=""
-                color="bg-blue-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-bold text-gray-450">
-                <span>HackerRank Challenges</span>
-                <span className={isDark ? 'text-white' : 'text-gray-905'}>{platformAggs.HackerRank.completed}/9 completed</span>
-              </div>
-              <ProgressBar
-                progress={(platformAggs.HackerRank.completed / 9) * 100}
-                label=""
-                color="bg-green-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-bold text-gray-450">
-                <span>Akamai Challenges</span>
-                <span className={isDark ? 'text-white' : 'text-gray-905'}>{platformAggs.Akamai.completed}/1 completed</span>
-              </div>
-              <ProgressBar
-                progress={(platformAggs.Akamai.completed / 1) * 100}
-                label=""
-                color="bg-purple-500"
-              />
-            </div>
+            {Object.entries(platformAggs).map(([platformName, agg], idx) => {
+              const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-amber-500", "bg-rose-500", "bg-teal-500"];
+              const color = colors[idx % colors.length];
+              const pct = agg.total > 0 ? (agg.completed / agg.total) * 100 : 0;
+              return (
+                <div key={platformName} className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-gray-450">
+                    <span>{platformName} Challenges</span>
+                    <span className={isDark ? 'text-white' : 'text-gray-905'}>
+                      {agg.completed}/{agg.total} completed
+                    </span>
+                  </div>
+                  <ProgressBar
+                    progress={pct}
+                    label=""
+                    color={color}
+                  />
+                </div>
+              );
+            })}
 
             <div className="border-t border-gray-150 dark:border-gray-850 pt-5">
               <div className="space-y-1.5">

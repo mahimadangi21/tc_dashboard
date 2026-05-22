@@ -112,19 +112,21 @@ export const MyTasks = () => {
     );
   }
 
-  const groupedTasks = {
-    Codechef: [],
-    HackerRank: [],
-    Akamai: []
-  };
+  const groupedTasks = {};
 
   trainee.trainee_tasks?.forEach((st) => {
-    const platform = st.task?.platform || 'Akamai';
-    if (groupedTasks[platform]) {
-      groupedTasks[platform].push(st);
-    } else {
-      groupedTasks['Akamai'].push(st);
+    const rawPlatform = st.task?.platform || 'Akamai';
+    let displayName = rawPlatform;
+    const lower = rawPlatform.toLowerCase();
+    if (lower === 'codechef') displayName = 'Codechef';
+    else if (lower === 'hackerrank') displayName = 'HackerRank';
+    else if (lower === 'akamai') displayName = 'Akamai';
+    else displayName = rawPlatform.charAt(0).toUpperCase() + rawPlatform.slice(1);
+
+    if (!groupedTasks[displayName]) {
+      groupedTasks[displayName] = [];
     }
+    groupedTasks[displayName].push(st);
   });
 
   return (
@@ -138,7 +140,7 @@ export const MyTasks = () => {
           </div>
 
           <div className={`divide-y ${isDark ? 'divide-gray-850/60' : 'divide-gray-150'}`}>
-            {['Codechef', 'HackerRank', 'Akamai'].map(platform => {
+            {Object.keys(groupedTasks).map(platform => {
               const tasksInPlatform = groupedTasks[platform] || [];
               if (tasksInPlatform.length === 0) return null;
 
@@ -152,7 +154,7 @@ export const MyTasks = () => {
 
                   {tasksInPlatform.map((st) => {
                     const isEditingThis = editingTaskId === st.task_id;
-                    const isAkamai = platform === 'Akamai';
+                    const isAkamai = platform.toLowerCase() === 'akamai';
                     const PlatformIcon = isAkamai ? Globe : Cpu;
 
                     return (

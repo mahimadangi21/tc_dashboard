@@ -22,12 +22,8 @@ export const TraineeCard = ({ trainee, joiningDate, onEdit, onDelete }) => {
   const progress = trainee.overall_progress ?? 0;
   const initials = getInitials(trainee.trainee_name);
 
-  // Default values if platformProgress is not passed
-  const pProgress = trainee.platformProgress || {
-    Codechef: { completed: 0, total: 3 },
-    HackerRank: { completed: 0, total: 9 },
-    Akamai: { completed: 0, total: 1 }
-  };
+  // platformProgress is now built dynamically per trainee from actual task data
+  const pProgress = trainee.platformProgress || {};
 
   return (
     <div className={`p-6 rounded-2xl flex flex-col justify-between space-y-5 transition-all duration-300 border hover:-translate-y-1 group ${
