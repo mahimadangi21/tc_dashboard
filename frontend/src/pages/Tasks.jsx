@@ -67,7 +67,7 @@ export const Tasks = () => {
     if (!taskName.trim() || !category.trim()) return;
     setFormLoading(true);
     try {
-      await api.post('/tasks', {
+      await api.post('/tasks/', {
         task_name: taskName.trim(),
         platform,
         category: category.trim(),

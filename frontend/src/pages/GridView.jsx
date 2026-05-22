@@ -91,7 +91,7 @@ export const GridView = () => {
     }
     setCreatingTask(true);
     try {
-      await api.post('/tasks', {
+      await api.post('/tasks/', {
         task_name: taskName,
         platform,
         category,

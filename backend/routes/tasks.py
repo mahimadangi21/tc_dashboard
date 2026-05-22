@@ -52,14 +52,3 @@ async def delete_task(
     Admin only. Delete a task and all associated trainee assignments.
     """
     return await TraineeService.delete_task(db, task_id)
-
-@router.delete("/{task_id}")
-async def delete_task(
-    task_id: int,
-    current_user: Trainee = Depends(require_admin),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Admin only. Delete a task and all associated trainee assignments.
-    """
-    return await TraineeService.delete_task(db, task_id)
