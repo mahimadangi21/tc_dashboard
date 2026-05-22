@@ -30,6 +30,7 @@ export const GridView = () => {
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [taskName, setTaskName] = useState('');
   const [platform, setPlatform] = useState('Codechef');
+  const [newPlatform, setNewPlatform] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [creatingTask, setCreatingTask] = useState(false);
@@ -83,22 +84,63 @@ export const GridView = () => {
     fetchData();
   }, []);
 
+  const DEFAULT_PLATFORMS = ['Codechef', 'HackerRank', 'Akamai', 'Internal'];
+
+  const uniquePlatforms = Array.from(new Set([
+    ...DEFAULT_PLATFORMS,
+    ...tasks.map((t) => t.platform).filter(Boolean)
+  ]));
+
+  const PLATFORM_COLORS = {
+    Codechef: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    HackerRank: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    Akamai: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+    Internal: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  };
+
+  const getPlatformColor = (plat) => {
+    return PLATFORM_COLORS[plat] || 'bg-pink-500/10 text-pink-400 border border-pink-500/20';
+  };
+
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!taskName.trim() || !category.trim()) {
       alert('Please fill out all required fields.');
       return;
     }
+
+    let finalPlatform = platform;
+    if (platform === 'Other') {
+      const trimmedNew = newPlatform.trim();
+      if (!trimmedNew) {
+        alert('New platform name is required.');
+        return;
+      }
+      if (trimmedNew.length < 2) {
+        alert('Platform name must be at least 2 characters.');
+        return;
+      }
+      const isDuplicate = uniquePlatforms.some(
+        (p) => p.toLowerCase() === trimmedNew.toLowerCase()
+      );
+      if (isDuplicate) {
+        alert('Platform name already exists.');
+        return;
+      }
+      finalPlatform = trimmedNew;
+    }
+
     setCreatingTask(true);
     try {
       await api.post('/tasks/', {
-        task_name: taskName,
-        platform,
-        category,
-        description: description || undefined
+        task_name: taskName.trim(),
+        platform: finalPlatform,
+        category: category.trim(),
+        description: description.trim() || undefined
       });
       setTaskName('');
       setPlatform('Codechef');
+      setNewPlatform('');
       setCategory('');
       setDescription('');
       setTaskModalOpen(false);
@@ -125,19 +167,17 @@ export const GridView = () => {
   }) || [];
 
   const groupTasksByPlatform = () => {
-    const groups = {
-      Codechef: [],
-      HackerRank: [],
-      Akamai: []
-    };
+    const groups = {};
+    uniquePlatforms.forEach(p => {
+      groups[p] = [];
+    });
 
     filteredTasks.forEach(tName => {
-      const tPlatform = taskNameToPlatform[tName] || 'Akamai';
-      if (groups[tPlatform]) {
-        groups[tPlatform].push(tName);
-      } else {
-        groups['Akamai'].push(tName);
+      const tPlatform = taskNameToPlatform[tName] || 'Internal';
+      if (!groups[tPlatform]) {
+        groups[tPlatform] = [];
       }
+      groups[tPlatform].push(tName);
     });
 
     return groups;
@@ -283,7 +323,7 @@ export const GridView = () => {
           <div className={`flex items-center gap-2 p-1.5 rounded-xl border ${
             isDark ? 'bg-gray-900 border-gray-850' : 'bg-gray-100 border-gray-205'
           }`}>
-            {['All', 'Codechef', 'HackerRank', 'Akamai'].map(p => (
+            {['All', ...uniquePlatforms].map(p => (
               <button
                 key={p}
                 onClick={() => setActivePlatform(p)}
@@ -307,7 +347,7 @@ export const GridView = () => {
 
         {/* Task Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {['Codechef', 'HackerRank', 'Akamai'].map(grpPlatform => {
+          {uniquePlatforms.map(grpPlatform => {
             const tasksInGroup = taskGroups[grpPlatform] || [];
             if (tasksInGroup.length === 0) return null;
 
@@ -327,13 +367,7 @@ export const GridView = () => {
                   <div>
                     {/* Platform Badge & Delete Button */}
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                        grpPlatform === 'HackerRank'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : grpPlatform === 'Codechef'
-                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border ${getPlatformColor(grpPlatform)}`}>
                         {grpPlatform}
                       </span>
                       <button
@@ -541,15 +575,20 @@ export const GridView = () => {
                   </label>
                   <select
                     value={platform}
-                    onChange={(e) => setPlatform(e.target.value)}
+                    onChange={(e) => {
+                      setPlatform(e.target.value);
+                      if (e.target.value !== 'Other') {
+                        setNewPlatform('');
+                      }
+                    }}
                     className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 font-bold ${
                       isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-white border-gray-200 text-gray-900 shadow-sm'
                     }`}
                   >
-                    <option value="Codechef">Codechef</option>
-                    <option value="HackerRank">HackerRank</option>
-                    <option value="Akamai">Akamai</option>
-                    <option value="Internal">Internal</option>
+                    {uniquePlatforms.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 
@@ -569,6 +608,24 @@ export const GridView = () => {
                   />
                 </div>
               </div>
+
+              {platform === 'Other' && (
+                <div className="mt-4">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-indigo-500 mb-2">
+                    New Platform Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter new platform name"
+                    value={newPlatform}
+                    onChange={(e) => setNewPlatform(e.target.value)}
+                    className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 placeholder-gray-500 font-medium ${
+                      isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-white border-gray-200 text-gray-900 shadow-sm'
+                    }`}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-indigo-500 mb-2">

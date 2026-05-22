@@ -10,7 +10,7 @@ Status = Literal['Completed', 'In Progress', 'Not Started', 'Does Not Apply']
 
 class TaskBase(BaseModel):
     task_name: str
-    platform: PlatformType
+    platform: str
     category: str
     description: Optional[str] = None
 

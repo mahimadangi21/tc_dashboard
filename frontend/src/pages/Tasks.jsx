@@ -4,13 +4,17 @@ import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
 import { CheckSquare, Trash2, PlusCircle, CheckCircle, AlertCircle, BookOpen, Code, Globe, Cpu } from 'lucide-react';
 
-const PLATFORM_OPTIONS = ['Codechef', 'HackerRank', 'Akamai', 'Internal'];
+const DEFAULT_PLATFORMS = ['Codechef', 'HackerRank', 'Akamai', 'Internal'];
 
 const PLATFORM_COLORS = {
   Codechef: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   HackerRank: 'bg-green-500/10 text-green-400 border-green-500/20',
   Akamai: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
   Internal: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+};
+
+const getPlatformColor = (plat) => {
+  return PLATFORM_COLORS[plat] || 'bg-pink-500/10 text-pink-400 border-pink-500/20';
 };
 
 const PlatformIcon = ({ platform, className }) => {
@@ -34,6 +38,7 @@ export const Tasks = () => {
   // New task form state
   const [taskName, setTaskName] = useState('');
   const [platform, setPlatform] = useState('HackerRank');
+  const [newPlatform, setNewPlatform] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [formLoading, setFormLoading] = useState(false);
@@ -62,14 +67,42 @@ export const Tasks = () => {
     fetchTasks();
   }, []);
 
+  // Dynamically compute unique platforms including those in tasks
+  const uniquePlatforms = Array.from(new Set([
+    ...DEFAULT_PLATFORMS,
+    ...tasks.map((t) => t.platform).filter(Boolean)
+  ]));
+
   const handleCreateTask = async (e) => {
     e.preventDefault();
     if (!taskName.trim() || !category.trim()) return;
+
+    let finalPlatform = platform;
+    if (platform === 'Other') {
+      const trimmedNew = newPlatform.trim();
+      if (!trimmedNew) {
+        triggerToast('New platform name is required.', 'error');
+        return;
+      }
+      if (trimmedNew.length < 2) {
+        triggerToast('Platform name must be at least 2 characters.', 'error');
+        return;
+      }
+      const isDuplicate = uniquePlatforms.some(
+        (p) => p.toLowerCase() === trimmedNew.toLowerCase()
+      );
+      if (isDuplicate) {
+        triggerToast('Platform name already exists.', 'error');
+        return;
+      }
+      finalPlatform = trimmedNew;
+    }
+
     setFormLoading(true);
     try {
       await api.post('/tasks/', {
         task_name: taskName.trim(),
-        platform,
+        platform: finalPlatform,
         category: category.trim(),
         description: description.trim() || null,
       });
@@ -78,6 +111,7 @@ export const Tasks = () => {
       setCategory('');
       setDescription('');
       setPlatform('HackerRank');
+      setNewPlatform('');
       fetchTasks();
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -103,7 +137,7 @@ export const Tasks = () => {
   };
 
   // Group tasks by platform
-  const grouped = PLATFORM_OPTIONS.reduce((acc, p) => {
+  const grouped = uniquePlatforms.reduce((acc, p) => {
     acc[p] = tasks.filter((t) => t.platform === p);
     return acc;
   }, {});
@@ -173,15 +207,39 @@ export const Tasks = () => {
                   </label>
                   <select
                     value={platform}
-                    onChange={(e) => setPlatform(e.target.value)}
+                    onChange={(e) => {
+                      setPlatform(e.target.value);
+                      if (e.target.value !== 'Other') {
+                        setNewPlatform('');
+                      }
+                    }}
                     className={`w-full border rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors ${
                       isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                     }`}
                   >
-                    {PLATFORM_OPTIONS.map((p) => (
+                    {uniquePlatforms.map((p) => (
                       <option key={p} value={p}>{p}</option>
                     ))}
+                    <option value="Other">Other</option>
                   </select>
+
+                  {platform === 'Other' && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-black uppercase tracking-wider text-indigo-500 mb-1.5">
+                        New Platform Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Enter new platform name"
+                        value={newPlatform}
+                        onChange={(e) => setNewPlatform(e.target.value)}
+                        className={`w-full border rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors ${
+                          isDark ? 'bg-gray-950 border-gray-850 text-white placeholder-gray-600' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+                        }`}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -253,14 +311,14 @@ export const Tasks = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {PLATFORM_OPTIONS.map((plat) => {
-                    const platTasks = grouped[plat];
+                  {uniquePlatforms.map((plat) => {
+                    const platTasks = grouped[plat] || [];
                     if (platTasks.length === 0) return null;
                     return (
                       <div key={plat}>
                         {/* Platform header */}
                         <div className={`flex items-center gap-2 mb-3 px-1`}>
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-black uppercase tracking-wider ${PLATFORM_COLORS[plat]}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-black uppercase tracking-wider ${getPlatformColor(plat)}`}>
                             <PlatformIcon platform={plat} className="h-3.5 w-3.5" />
                             {plat}
                           </span>

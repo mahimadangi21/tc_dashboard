@@ -16,7 +16,7 @@ class Task(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     task_name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    platform: Mapped[PlatformType] = mapped_column(Enum(PlatformType), nullable=False)
+    platform: Mapped[str] = mapped_column(String(100), nullable=False)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
