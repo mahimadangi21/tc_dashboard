@@ -206,7 +206,7 @@ async def seed_db():
     else:
         clean_url = url
 
-    engine = create_async_engine(clean_url, connect_args={"ssl": True})
+    engine = create_async_engine(clean_url, connect_args={"ssl": True, "statement_cache_size": 0})
     AsyncSessionMaker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with AsyncSessionMaker() as session:

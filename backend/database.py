@@ -20,13 +20,15 @@ else:
 # Create the async engine with NeonDB optimized connection pooling and SSL connection arguments
 engine = create_async_engine(
     clean_url,
-    connect_args={"ssl": True},
+    connect_args={"ssl": True, "statement_cache_size": 0},
     echo=False,
     pool_pre_ping=True,     # auto-reconnect after NeonDB sleep
     pool_size=5,
     max_overflow=10,
     pool_recycle=300
 )
+
+
 
 # Create the async session factory
 AsyncSessionLocal = sessionmaker(

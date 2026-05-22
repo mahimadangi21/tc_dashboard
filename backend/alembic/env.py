@@ -66,7 +66,7 @@ async def run_migrations_online() -> None:
         
     connectable = create_async_engine(
         clean_url,
-        connect_args={"ssl": True},
+        connect_args={"ssl": True, "statement_cache_size": 0},
         poolclass=pool.NullPool,
     )
 
