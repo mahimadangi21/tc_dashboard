@@ -26,9 +26,6 @@ export const Trainees = () => {
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formDept, setFormDept] = useState('Development');
-  const [formHRUser, setFormHRUser] = useState('');
-  const [formHRScore, setFormHRScore] = useState(0);
-  const [formHRSolved, setFormHRSolved] = useState(0);
   const [formTechs, setFormTechs] = useState([]);
   const [formError, setFormError] = useState('');
 
@@ -113,9 +110,6 @@ export const Trainees = () => {
     setFormEmail('');
     setFormPassword('');
     setFormDept('Development');
-    setFormHRUser('');
-    setFormHRScore(0);
-    setFormHRSolved(0);
     setFormTechs([]);
     setFormError('');
     setShowModal(true);
@@ -128,9 +122,6 @@ export const Trainees = () => {
     setFormEmail(trainee.email || `${trainee.trainee_name.toLowerCase()}@tckade.com`);
     setFormPassword('');
     setFormDept(trainee.department || 'Development');
-    setFormHRUser(trainee.hackerrank_username || '');
-    setFormHRScore(trainee.hackerrank_score || 0);
-    setFormHRSolved(trainee.hackerrank_solved || 0);
     setFormTechs(trainee.technologies || []);
     setFormError('');
     setShowModal(true);
@@ -151,9 +142,9 @@ export const Trainees = () => {
       email: formEmail,
       department: formDept,
       technologies: formTechs,
-      hackerrank_username: formHRUser || null,
-      hackerrank_score: parseInt(formHRScore) || 0,
-      hackerrank_solved: parseInt(formHRSolved) || 0
+      hackerrank_username: null,
+      hackerrank_score: 0,
+      hackerrank_solved: 0
     };
 
     try {
@@ -162,7 +153,7 @@ export const Trainees = () => {
           setFormError('Password is required when creating a new trainee.');
           return;
         }
-        await api.post('/trainees', { ...payload, password: formPassword });
+        await api.post('/trainees/', { ...payload, password: formPassword });
       } else {
         const editPayload = { ...payload };
         if (formPassword) editPayload.password = formPassword;
@@ -362,54 +353,6 @@ export const Trainees = () => {
                     <option value="QA Testing">QA Testing</option>
                     <option value="Management">Management</option>
                   </select>
-                </div>
-
-                {/* HackerRank Profile Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-1">
-                    <label className="block text-xs font-black uppercase tracking-wider text-indigo-500 mb-1.5">
-                      HackerRank User
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. mahima_tc"
-                      value={formHRUser}
-                      onChange={(e) => setFormHRUser(e.target.value)}
-                      className={`w-full border rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 ${
-                        isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-indigo-500 mb-1.5">
-                      HackerRank Score
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formHRScore}
-                      onChange={(e) => setFormHRScore(e.target.value)}
-                      className={`w-full border rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 ${
-                        isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-indigo-500 mb-1.5">
-                      Solved Count
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formHRSolved}
-                      onChange={(e) => setFormHRSolved(e.target.value)}
-                      className={`w-full border rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 ${
-                        isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                      }`}
-                    />
-                  </div>
                 </div>
 
 
