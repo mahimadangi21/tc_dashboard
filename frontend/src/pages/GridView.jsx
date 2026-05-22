@@ -223,7 +223,8 @@ export const GridView = () => {
   };
 
   return (
-    <Layout title="Spreadsheet Tracking Grid">
+    <>
+      <Layout title="Spreadsheet Tracking Grid">
       <div className="space-y-8 max-w-7xl mx-auto pb-16">
         {/* Header Controls */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -240,7 +241,7 @@ export const GridView = () => {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setTaskModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white text-xs font-bold transition-all cursor-pointer shadow-md shrink-0"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all cursor-pointer shadow-md shrink-0"
             >
               <Plus className="h-4 w-4" />
               Add Task Course
@@ -288,7 +289,7 @@ export const GridView = () => {
                 onClick={() => setActivePlatform(p)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   activePlatform === p
-                    ? 'bg-indigo-650 text-white shadow-md'
+                    ? 'bg-indigo-600 text-white shadow-md'
                     : isDark
                       ? 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
@@ -407,10 +408,11 @@ export const GridView = () => {
           })}
         </div>
       </div>
+      </Layout>
 
       {/* Status Update Modal */}
       {modalOpen && selectedCell && (
-        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-lg flex items-center justify-center p-4 z-[100]">
           <div className={`w-full max-w-md border rounded-2xl shadow-2xl p-6 relative ${
             isDark ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-900'
           }`}>
@@ -478,7 +480,7 @@ export const GridView = () => {
                 type="button"
                 onClick={handleSaveStatus}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md"
               >
                 {saving ? (
                   <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
@@ -496,7 +498,7 @@ export const GridView = () => {
 
       {/* Add Task Modal */}
       {taskModalOpen && (
-        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-lg flex items-center justify-center p-4 z-[100]">
           <div className={`w-full max-w-md border rounded-2xl shadow-2xl p-6 relative ${
             isDark ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-900'
           }`}>
@@ -596,7 +598,7 @@ export const GridView = () => {
                 <button
                   type="submit"
                   disabled={creatingTask}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md"
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md"
                 >
                   {creatingTask ? (
                     <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
@@ -612,7 +614,7 @@ export const GridView = () => {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 };
 

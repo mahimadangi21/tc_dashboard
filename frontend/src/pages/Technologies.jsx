@@ -15,7 +15,7 @@ const TECH_METADATA = {
     bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
   },
   PHP: {
-    color: 'from-indigo-500 to-indigo-750',
+    color: 'from-indigo-500 to-indigo-700',
     icon: Layers,
     desc: 'Legacy web application platforms and server modules.',
     bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'

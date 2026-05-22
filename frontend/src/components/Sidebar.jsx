@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Grid3x3, Users, BarChart2, User, CheckSquare, LogOut, Code2, Bell, X, Check } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
@@ -7,6 +7,7 @@ import api from '../api/axios';
 export const Sidebar = () => {
   const { logout, role, trainee_id, trainee_name, user, theme } = useContext(AuthContext);
   const isDark = theme === 'dark';
+  const location = useLocation();
 
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -50,8 +51,8 @@ export const Sidebar = () => {
   ];
 
   const traineeLinks = [
-    { to: `/trainees/${trainee_id}`, label: 'My Progress', icon: User },
-    { to: `/trainees/${trainee_id}?tab=tasks`, label: 'My Tasks', icon: CheckSquare },
+    { to: '/trainee/progress', label: 'My Progress', icon: User },
+    { to: '/trainee/tasks', label: 'My Tasks', icon: CheckSquare },
   ];
 
   const links = role === 'admin' ? adminLinks : traineeLinks;

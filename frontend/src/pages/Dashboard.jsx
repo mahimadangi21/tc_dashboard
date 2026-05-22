@@ -41,12 +41,13 @@ export const Dashboard = () => {
         api.get('/analytics/platform-wise'),
       ]);
       setSummary(summaryRes.data);
-      setTraineeWise(traineeRes.data.map(t => ({
+      const traineeData = Array.isArray(traineeRes.data) ? traineeRes.data : [];
+      setTraineeWise(traineeData.map(t => ({
         ...t,
-        trainee_name: t.student_name // ensure name is unified
+        trainee_name: t.student_name || t.trainee_name // ensure name is unified
       })));
-      setTaskWise(taskRes.data);
-      setPlatformWise(platformRes.data);
+      setTaskWise(Array.isArray(taskRes.data) ? taskRes.data : []);
+      setPlatformWise(Array.isArray(platformRes.data) ? platformRes.data : []);
     } catch (err) {
       console.error('Failed to load administrative dashboard overview:', err);
       setError('Error loading administrative metrics. Please check connection and permissions.');

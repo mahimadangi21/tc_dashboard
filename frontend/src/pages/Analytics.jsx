@@ -118,7 +118,7 @@ export const Analytics = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white text-xs font-bold transition-all shadow-md shrink-0 cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-md shrink-0 cursor-pointer"
             >
               <Download className="h-4 w-4" />
               Export Reports

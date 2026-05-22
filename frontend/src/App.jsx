@@ -12,6 +12,8 @@ import Trainees from './pages/Trainees';
 import TraineeDetail from './pages/TraineeDetail';
 import Analytics from './pages/Analytics';
 import Tasks from './pages/Tasks';
+import MyProgress from './pages/MyProgress';
+import MyTasks from './pages/MyTasks';
 
 function App() {
   return (
@@ -80,6 +82,23 @@ function App() {
             }
           />
 
+          <Route
+            path="/trainee/progress"
+            element={
+              <ProtectedRoute allowedRoles={['trainee', 'student']}>
+                <MyProgress />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trainee/tasks"
+            element={
+              <ProtectedRoute allowedRoles={['trainee', 'student']}>
+                <MyTasks />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Legacy fallback redirects for old student paths */}
           <Route path="/students" element={<Navigate to="/trainees" replace />} />
           <Route path="/students/:id" element={<TraineeDetailRedirect />} />
@@ -117,7 +136,7 @@ const RootRedirect = () => {
   if (role === 'admin') {
     return <Navigate to="/dashboard" replace />;
   } else if ((role === 'trainee' || role === 'student') && traineeId) {
-    return <Navigate to={`/trainees/${traineeId}`} replace />;
+    return <Navigate to="/trainee/progress" replace />;
   }
   return <Navigate to="/login" replace />;
 };

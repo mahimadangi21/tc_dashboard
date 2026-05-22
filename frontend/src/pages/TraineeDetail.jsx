@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 import Layout from '../components/Layout';
@@ -11,6 +11,9 @@ import { formatDate } from '../utils/formatters';
 export const TraineeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'progress';
+  const tasksRef = useRef(null);
   const { role, trainee_id: loggedInTraineeId, theme } = useContext(AuthContext);
   const isDark = theme === 'dark';
 
@@ -61,6 +64,15 @@ export const TraineeDetail = () => {
     fetchDetails();
   }, [id, role, loggedInTraineeId]);
 
+  // Auto-scroll to tasks section when ?tab=tasks
+  useEffect(() => {
+    if (activeTab === 'tasks' && tasksRef.current && trainee) {
+      setTimeout(() => {
+        tasksRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [activeTab, trainee]);
+
   if (loading) {
     return (
       <div className={`flex h-screen items-center justify-center ${isDark ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -79,7 +91,7 @@ export const TraineeDetail = () => {
           {role === 'trainee' && (
             <Link
               to={`/trainees/${loggedInTraineeId}`}
-              className="inline-block px-4 py-2.5 rounded-xl bg-indigo-650 text-white text-xs font-bold hover:bg-indigo-750 transition-all"
+              className="inline-block px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-all"
             >
               Go to My Profile
             </Link>
@@ -191,6 +203,34 @@ export const TraineeDetail = () => {
   return (
     <Layout title={`${trainee.trainee_name}'s Profile`}>
       <div className="space-y-8 max-w-7xl mx-auto pb-16">
+
+        {/* Tab Navigation — for trainees */}
+        {role === 'trainee' && (
+          <div className={`flex items-center gap-2 p-1.5 rounded-xl border w-fit ${
+            isDark ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'
+          }`}>
+            <Link
+              to={`/trainees/${id}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'progress'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              My Progress
+            </Link>
+            <Link
+              to={`/trainees/${id}?tab=tasks`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'tasks'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              My Tasks
+            </Link>
+          </div>
+        )}
         {/* Header Block — Back Navigation + Avatar + Name + Progress Donut */}
         <div className={`p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 border transition-all ${
           isDark 
@@ -269,7 +309,7 @@ export const TraineeDetail = () => {
         {/* Dynamic Body Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Task list (all 13 tasks) — 2 Columns wide */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6" ref={tasksRef}>
             <div className={`border rounded-2xl overflow-hidden shadow-2xl transition-all ${
               isDark ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-900 shadow-sm'
             }`}>
@@ -303,7 +343,7 @@ export const TraineeDetail = () => {
                             {/* Icon + Task Name */}
                             <div className="flex items-start gap-3 min-w-0">
                               <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${
-                                isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-650'
+                                isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
                               }`}>
                                 <PlatformIcon className="h-4 w-4" />
                               </div>
@@ -314,7 +354,7 @@ export const TraineeDetail = () => {
                                     {st.task?.category}
                                   </span>
                                   {st.notes && (
-                                    <span className={`text-[10px] font-medium block italic ${isDark ? 'text-indigo-400/80' : 'text-indigo-650/80'}`}>
+                                    <span className={`text-[10px] font-medium block italic ${isDark ? 'text-indigo-400/80' : 'text-indigo-600/80'}`}>
                                       Notes: {st.notes}
                                     </span>
                                   )}
@@ -342,7 +382,7 @@ export const TraineeDetail = () => {
                                     <button
                                       onClick={() => handleSaveEdit(st.task_id)}
                                       disabled={savingTaskId === st.task_id}
-                                      className="p-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-750 text-white transition-colors cursor-pointer"
+                                      className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer"
                                       title="Save Changes"
                                     >
                                       <Save className="h-4 w-4" />

@@ -192,7 +192,8 @@ export const Trainees = () => {
   );
 
   return (
-    <Layout title="Trainees Directory">
+    <>
+      <Layout title="Trainees Directory">
       <div className="space-y-8 max-w-7xl mx-auto pb-12">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -229,7 +230,7 @@ export const Trainees = () => {
             {isAdmin && (
               <button
                 onClick={openAddModal}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold text-xs transition-all shadow-md shrink-0 cursor-pointer"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition-all shadow-lg shrink-0 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Add Trainee
@@ -265,10 +266,12 @@ export const Trainees = () => {
             ))}
           </div>
         )}
+      </div>
+    </Layout>
 
-        {/* glassmorphic Modal Form */}
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm overflow-y-auto">
+    {/* glassmorphic Modal Form */}
+    {showModal && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-lg overflow-y-auto">
             <div className={`w-full max-w-lg rounded-2xl border p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto ${
               isDark ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-205 text-gray-900'
             }`}>
@@ -414,7 +417,7 @@ export const Trainees = () => {
                 <div className="pt-3">
                   <button
                     type="submit"
-                    className="w-full py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white font-extrabold text-xs transition-all shadow-md cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition-all shadow-md cursor-pointer"
                   >
                     {modalMode === 'add' ? 'Create Trainee Profile' : 'Save Changes'}
                   </button>
@@ -423,8 +426,7 @@ export const Trainees = () => {
             </div>
           </div>
         )}
-      </div>
-    </Layout>
+    </>
   );
 };
 
