@@ -86,9 +86,19 @@ export const GridView = () => {
 
   const DEFAULT_PLATFORMS = ['Codechef', 'HackerRank', 'Akamai', 'Internal'];
 
+  const normalizePlatform = (raw) => {
+    if (!raw) return 'Akamai';
+    const lower = raw.toLowerCase();
+    if (lower === 'codechef') return 'Codechef';
+    if (lower === 'hackerrank') return 'HackerRank';
+    if (lower === 'akamai') return 'Akamai';
+    if (lower === 'internal') return 'Internal';
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  };
+
   const uniquePlatforms = Array.from(new Set([
     ...DEFAULT_PLATFORMS,
-    ...tasks.map((t) => t.platform).filter(Boolean)
+    ...tasks.map((t) => normalizePlatform(t.platform)).filter(Boolean)
   ]));
 
   const PLATFORM_COLORS = {

@@ -6,6 +6,16 @@ import { CheckSquare, Trash2, PlusCircle, CheckCircle, AlertCircle, BookOpen, Co
 
 const DEFAULT_PLATFORMS = ['Codechef', 'HackerRank', 'Akamai', 'Internal'];
 
+const normalizePlatform = (raw) => {
+  if (!raw) return 'Akamai';
+  const lower = raw.toLowerCase();
+  if (lower === 'codechef') return 'Codechef';
+  if (lower === 'hackerrank') return 'HackerRank';
+  if (lower === 'akamai') return 'Akamai';
+  if (lower === 'internal') return 'Internal';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+};
+
 const PLATFORM_COLORS = {
   Codechef: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   HackerRank: 'bg-green-500/10 text-green-400 border-green-500/20',
@@ -70,7 +80,7 @@ export const Tasks = () => {
   // Dynamically compute unique platforms including those in tasks
   const uniquePlatforms = Array.from(new Set([
     ...DEFAULT_PLATFORMS,
-    ...tasks.map((t) => t.platform).filter(Boolean)
+    ...tasks.map((t) => normalizePlatform(t.platform)).filter(Boolean)
   ]));
 
   const handleCreateTask = async (e) => {
@@ -136,9 +146,9 @@ export const Tasks = () => {
     }
   };
 
-  // Group tasks by platform
+  // Group tasks by normalized platform name
   const grouped = uniquePlatforms.reduce((acc, p) => {
-    acc[p] = tasks.filter((t) => t.platform === p);
+    acc[p] = tasks.filter((t) => normalizePlatform(t.platform) === p);
     return acc;
   }, {});
 
