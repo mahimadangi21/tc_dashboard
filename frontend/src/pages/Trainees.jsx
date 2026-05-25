@@ -26,6 +26,8 @@ export const Trainees = () => {
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formDept, setFormDept] = useState('Development');
+  const [formDeptOther, setFormDeptOther] = useState('');
+  const [showDeptOther, setShowDeptOther] = useState(false);
   const [formTechs, setFormTechs] = useState([]);
   const [formError, setFormError] = useState('');
 
@@ -127,10 +129,14 @@ export const Trainees = () => {
     setFormEmail('');
     setFormPassword('');
     setFormDept('Development');
+    setFormDeptOther('');
+    setShowDeptOther(false);
     setFormTechs([]);
     setFormError('');
     setShowModal(true);
   };
+
+  const PRESET_DEPTS = ['Development', 'QA Testing', 'Management'];
 
   const openEditModal = (trainee) => {
     setModalMode('edit');
@@ -138,7 +144,16 @@ export const Trainees = () => {
     setFormName(trainee.trainee_name);
     setFormEmail(trainee.email || `${trainee.trainee_name.toLowerCase()}@tckade.com`);
     setFormPassword('');
-    setFormDept(trainee.department || 'Development');
+    const dept = trainee.department || 'Development';
+    if (PRESET_DEPTS.includes(dept)) {
+      setFormDept(dept);
+      setFormDeptOther('');
+      setShowDeptOther(false);
+    } else {
+      setFormDept('Other');
+      setFormDeptOther(dept);
+      setShowDeptOther(true);
+    }
     setFormTechs(trainee.technologies || []);
     setFormError('');
     setShowModal(true);
@@ -154,10 +169,16 @@ export const Trainees = () => {
     e.preventDefault();
     setFormError('');
 
+    const finalDept = formDept === 'Other' ? formDeptOther.trim() : formDept;
+    if (formDept === 'Other' && !formDeptOther.trim()) {
+      setFormError('Please enter a department name.');
+      return;
+    }
+
     const payload = {
       trainee_name: formName,
       email: formEmail,
-      department: formDept,
+      department: finalDept,
       technologies: formTechs,
       hackerrank_username: null,
       hackerrank_score: 0,
@@ -361,7 +382,12 @@ export const Trainees = () => {
                   </label>
                   <select
                     value={formDept}
-                    onChange={(e) => setFormDept(e.target.value)}
+                    onChange={(e) => {
+                      setFormDept(e.target.value);
+                      const isOther = e.target.value === 'Other';
+                      setShowDeptOther(isOther);
+                      if (!isOther) setFormDeptOther('');
+                    }}
                     className={`w-full border rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 ${
                       isDark ? 'bg-gray-950 border-gray-850 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                     }`}
@@ -369,7 +395,23 @@ export const Trainees = () => {
                     <option value="Development">Development</option>
                     <option value="QA Testing">QA Testing</option>
                     <option value="Management">Management</option>
+                    <option value="Other">Other</option>
                   </select>
+
+                  {/* Custom department name input — shown when Other is selected */}
+                  {showDeptOther && (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter department name..."
+                      value={formDeptOther}
+                      onChange={(e) => setFormDeptOther(e.target.value)}
+                      autoFocus
+                      className={`mt-2 w-full border rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 ${
+                        isDark ? 'bg-gray-950 border-gray-850 text-white placeholder-gray-600' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+                      }`}
+                    />
+                  )}
                 </div>
 
 

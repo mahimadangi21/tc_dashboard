@@ -23,7 +23,7 @@ clean_url = f"{clean_url}?prepared_statement_cache_size=0"
 # Create the async engine with NeonDB optimized connection pooling and SSL connection arguments
 engine = create_async_engine(
     clean_url,
-    connect_args={"ssl": True, "statement_cache_size": 0},
+    connect_args={"ssl": False if "127.0.0.1" in clean_url or "localhost" in clean_url else True, "statement_cache_size": 0},
     echo=False,
     pool_pre_ping=True,     # auto-reconnect after NeonDB sleep
     pool_size=5,
